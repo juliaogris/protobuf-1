@@ -14,14 +14,14 @@ const maxReserved = int32(1 << 29)
 type fileDescriptorBuilder struct {
 	proto3   bool
 	fileDesc *pb.FileDescriptorProto
-	types    types
+	types    *types
 	scope    []string
 }
 
 type messageBuilder struct {
 	proto3      bool
 	messageDesc *pb.DescriptorProto
-	types       types
+	types       *types
 	scope       []string
 
 	proto3optionalFields []*pb.FieldDescriptorProto
@@ -29,14 +29,14 @@ type messageBuilder struct {
 
 type fieldBuilder struct {
 	proto3 bool
-	types  types
+	types  *types
 	scope  []string
 
 	oneofIndex *int32
 	extendee   *string
 }
 
-func newFileDescriptor(ast *ast, types types) *pb.FileDescriptorProto {
+func newFileDescriptor(ast *ast, types *types) *pb.FileDescriptorProto {
 	var proto3 bool
 	var syntax *string
 	if ast.syntax == "proto3" {
@@ -87,7 +87,7 @@ func (b *fileDescriptorBuilder) addEntry(e *parser.Entry) {
 	}
 }
 
-func newMessage(name string, entries []*parser.MessageEntry, proto3 bool, scope []string, types types) *pb.DescriptorProto {
+func newMessage(name string, entries []*parser.MessageEntry, proto3 bool, scope []string, types *types) *pb.DescriptorProto {
 	b := &messageBuilder{
 		proto3: proto3,
 		scope:  append(scope, name),
@@ -280,7 +280,7 @@ func fieldTag(f *parser.Field) *int32 {
 	return &tag
 }
 
-func fieldType(f *parser.Field, scope []string, types types) (pb.FieldDescriptorProto_Type, *string) {
+func fieldType(f *parser.Field, scope []string, types *types) (pb.FieldDescriptorProto_Type, *string) {
 	switch {
 	case isMap(f):
 		name, pbType := types.fullName(mapTypeStr(f.Direct.Name), scope)
@@ -300,7 +300,7 @@ func fieldType(f *parser.Field, scope []string, types types) (pb.FieldDescriptor
 	}
 }
 
-func newFieldDescriptorProtoType(t *parser.Type, scope []string, types types) (pb.FieldDescriptorProto_Type, *string) {
+func newFieldDescriptorProtoType(t *parser.Type, scope []string, types *types) (pb.FieldDescriptorProto_Type, *string) {
 	if t.Scalar != parser.None {
 		return scalars[t.Scalar], nil
 	}
@@ -311,7 +311,7 @@ func newFieldDescriptorProtoType(t *parser.Type, scope []string, types types) (p
 	panic("unimplemented type, probably map")
 }
 
-func newMapEntry(f *parser.Field, scope []string, types types) *pb.DescriptorProto {
+func newMapEntry(f *parser.Field, scope []string, types *types) *pb.DescriptorProto {
 	keyField := MapEntryField("key", 1, f.Direct.Type.Map.Key, scope, types)
 	valueField := MapEntryField("value", 2, f.Direct.Type.Map.Value, scope, types)
 	name := mapTypeStr(f.Direct.Name)
@@ -324,7 +324,7 @@ func newMapEntry(f *parser.Field, scope []string, types types) *pb.DescriptorPro
 	}
 }
 
-func MapEntryField(name string, number int32, t *parser.Type, scope []string, types types) *pb.FieldDescriptorProto {
+func MapEntryField(name string, number int32, t *parser.Type, scope []string, types *types) *pb.FieldDescriptorProto {
 	label := pb.FieldDescriptorProto_LABEL_OPTIONAL
 	fType, typeName := newFieldDescriptorProtoType(t, scope, types)
 	return &pb.FieldDescriptorProto{
@@ -391,7 +391,7 @@ func mapTypeStr(s string) string {
 	return result + "Entry"
 }
 
-func newService(s *parser.Service, scope []string, types types) *pb.ServiceDescriptorProto {
+func newService(s *parser.Service, scope []string, types *types) *pb.ServiceDescriptorProto {
 	methods := []*pb.MethodDescriptorProto{}
 	for _, e := range s.Entry {
 		if e.Method != nil {
@@ -409,7 +409,7 @@ func newService(s *parser.Service, scope []string, types types) *pb.ServiceDescr
 	return sd
 }
 
-func newMethod(m *parser.Method, scope []string, types types) *pb.MethodDescriptorProto {
+func newMethod(m *parser.Method, scope []string, types *types) *pb.MethodDescriptorProto {
 	var clientStreaming, serverStreaming *bool
 	if m.StreamingRequest {
 		clientStreaming = &m.StreamingRequest
@@ -425,6 +425,7 @@ func newMethod(m *parser.Method, scope []string, types types) *pb.MethodDescript
 	if outputType != pb.FieldDescriptorProto_TYPE_MESSAGE {
 		panic(fmt.Sprintf("%s: method %s should have Message as response type", m.Pos, m.Name))
 	}
+	// pb.methodOptions{}; value,
 	md := &pb.MethodDescriptorProto{
 		Name:            &m.Name,
 		InputType:       inputTypeName,
@@ -499,7 +500,7 @@ func newOptions(o []*parser.Option) *pb.FileOptions {
 	return opts
 }
 
-func newExtend(e *parser.Extend, proto3 bool, scope []string, types types) (fields []*pb.FieldDescriptorProto, groups []*pb.DescriptorProto) {
+func newExtend(e *parser.Extend, proto3 bool, scope []string, types *types) (fields []*pb.FieldDescriptorProto, groups []*pb.DescriptorProto) {
 	extendee, _ := types.fullName(e.Reference, scope)
 	fdBuilder := fieldBuilder{proto3: proto3, scope: scope, types: types, extendee: &extendee}
 	fds := make([]*pb.FieldDescriptorProto, len(e.Fields))

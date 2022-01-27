@@ -71,7 +71,7 @@ func NewFileDescriptorSet(files, importPaths []string, includeImports bool) (*pb
 // * f1 imports f2 which imports f3
 // * g1 imports g2, g3, f3
 // readProtos([]string{f1, g1}, ...)
-// results in the following order: f3, f2, f1, g2, g3, f2
+// results in the following order: f3, f2, f1, g2, g3, g1
 func readProtos(files, importPaths []string, done map[string]bool) ([]*ast, error) {
 	asts := make([]*ast, 0, len(files))
 	for _, file := range files {

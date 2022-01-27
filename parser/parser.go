@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"math/big"
+	"strings"
 
 	"github.com/alecthomas/participle/v2"
 	"github.com/alecthomas/participle/v2/lexer"
@@ -82,10 +83,45 @@ type Value struct {
 	Array     *Array     `| @@`
 }
 
+func (v *Value) ToString() string {
+	return v.ToStringIndent("")
+}
+
+func (v *Value) ToStringIndent(indent string) string {
+	switch {
+	case v.String != nil:
+		return `"` + *v.String + `"`
+	case v.Number != nil:
+		return v.Number.String()
+	case v.Bool != nil:
+		return fmt.Sprintf("%t", *v.Bool)
+	case v.Reference != nil:
+		return *v.Reference
+	case v.ProtoText != nil:
+		return v.ProtoText.ToStringIndent(indent)
+	case v.Array != nil:
+		return v.Array.ToStringIndent(indent)
+	default:
+		return "UNKNOWN VALUE"
+	}
+}
+
 type ProtoText struct {
 	Pos lexer.Position
 
 	Fields []*ProtoTextField `( @@ ( "," | ";" )? )*`
+}
+
+func (p *ProtoText) ToStringIndent(indent string) string {
+	var b strings.Builder
+	b.WriteString("{\n")
+	for _, f := range p.Fields {
+		indent2 := indent + "  "
+		val := f.Value.ToStringIndent(indent2)
+		fmt.Fprintf(&b, "%s%s%s: %s\n", indent2, f.Name, f.Type, val)
+	}
+	b.WriteString(indent + "}")
+	return b.String()
 }
 
 type ProtoTextField struct {
@@ -102,6 +138,14 @@ type Array struct {
 	Pos lexer.Position
 
 	Elements []*Value `"[" [ @@ { [ "," ] @@ } ] "]"`
+}
+
+func (a *Array) ToStringIndent(indent string) string {
+	s := make([]string, len(a.Elements))
+	for i, e := range a.Elements {
+		s[i] = e.ToStringIndent(indent)
+	}
+	return "[ " + strings.Join(s, ", ") + " ]"
 }
 
 type Extensions struct {

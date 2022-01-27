@@ -1,20 +1,55 @@
 syntax = "proto3";
 package pkg;
 
-import "01_proto3_pkg.proto";
-import "05_proto3_import.proto";
+// import "github.com/squareup/orc/protos/orc.proto"
+// com.github.squareup.orc.protos
 
-message Request {
-  optional pkg.M3 m3 = 3;
-  pkg2.M5 m5 = 5;
-}
+// import "01_proto3_pkg.proto";
+// import "05_proto3_import.proto";
+// import "google/protobuf/descriptor.proto";
+// import "google/api/annotations.proto";
 
-service Greeter {
-  rpc Hello (Request) returns (pkg2.M5);
-  rpc HelloClientStream (stream .pkg.M3) returns (.pkg.HelloResponse);
-  rpc HelloServerStream (HelloRequest) returns (stream HelloResponse);
-  rpc HelloBiDiStream (stream HelloRequest) returns (stream HelloResponse);
+// message M {
+//   repeated string s = 1;
+// }
+
+// extend google.protobuf.MethodOptions {
+//   string strings = 50000;
+// }
+
+//TODO!!!! comments inside options aren't working.
+
+service HelloService {
+  rpc Hello (HelloRequest) returns (HelloResponse);
 }
+// service HelloService {
+//   rpc Hello (HelloRequest) returns (HelloResponse) {
+//     option (google.api.http) = {get: "bla", body: "--body--", response_body:"--response_body--"};
+//     // {http: {post: "bal", ...}}
+//     // option (google.api.http) = { post: "bal" body: "*"};
+//     // option (google.api.http).post = "bla";
+//     // option (google.api.http).get = "bla";
+//     //option (google.api.http).custom = {kind: "*"};
+//     // {http: {custom: {kind: "*"}}}
+//     //option (alecs.http).custom = {kind: "*"};
+//     // { {http: {custom: {kind: "*"}}}}
+//     option (strings) = "HI";
+//     option deprecated = true;
+//     // {string: "HI"}
+//   };
+// }
+
+// message Request {
+//   optional pkg.M3 m3 = 3;
+//   pkg2.M5 m5 = 5 [deprecated = true];
+// }
+
+// service Greeter {
+//   rpc Hello (Request) returns (pkg2.M5);
+//   rpc HelloClientStream (stream .pkg.M3) returns (.pkg.HelloResponse);
+//   rpc HelloServerStream (HelloRequest) returns (stream HelloResponse);
+//   rpc HelloBiDiStream (stream HelloRequest) returns (stream HelloResponse);
+// }
 
 message HelloRequest {
   string first_name = 1;
