@@ -15,11 +15,13 @@ linters:
     - gci
     - gochecknoglobals
     - goconst
+    - gocritic
     - godot
     - godox
     - golint
     - gomnd
     - interfacer
+    - ireturn
     - lll
     - maligned
     - nlreturn
@@ -35,6 +37,8 @@ linters:
     - cyclop
     - gocognit
     - gofumpt
+    - gosec
+    - stylecheck
 
 linters-settings:
   govet:

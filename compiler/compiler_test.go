@@ -157,17 +157,21 @@ func TestAggregateOptionsSeparateFiles(t *testing.T) {
 	name := "18_b_proto2_aggregate_opt"
 	fdName := name + ".proto"
 	importPaths := []string{"testdata"}
-	fds, err := NewFileDescriptorSet([]string{fdName}, importPaths, true)
+	fds, err := NewFileDescriptorSet([]string{fdName}, importPaths, true) // compile
 	require.NoError(t, err)
-	require.Equal(t, 3, len(fds.File))
-	got := fds.File[2]
-	require.Equal(t, fdName, got.GetName())
+
+	b, err := proto.Marshal(fds)
+	require.NoError(t, err)
+	dir := "testdata" //t.TempDir()
+	gotFile := filepath.Join(dir, name+".pb")
+	require.NoError(t, os.WriteFile(gotFile, b, 0666))
+
+	got := loadPB(t, gotFile)
+
+	// gotFDS
 
 	pbFile := "testdata/pb/" + name + ".pb"
-	wantFDS := loadPB(t, pbFile)
-	require.Equal(t, 3, len(wantFDS.File))
-	want := fds.File[2]
-	require.Equal(t, fdName, got.GetName())
-
+	want := loadPB(t, pbFile)
 	requireProtoEqual(t, want, got)
+	//requireProtoEqual(t, want, got)
 }
